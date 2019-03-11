@@ -21,6 +21,9 @@ function bullseye (el, target, options) {
   var tailorOptions = { update: o.autoupdateToCaret !== false && update };
   var tailor = o.caret && tailormade(target, tailorOptions);
 
+  var bounds = {};
+  var textRtl = document.querySelectorAll('body[dir="rtl"]');
+
   write();
 
   if (o.tracking !== false) {
@@ -41,7 +44,7 @@ function bullseye (el, target, options) {
   function readNull () { return read(); }
 
   function read (readings) {
-    var bounds = target.getBoundingClientRect();
+    bounds = target.getBoundingClientRect();
     var scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
     if (tailor) {
       readings = tailor.read();
@@ -50,9 +53,16 @@ function bullseye (el, target, options) {
         y: (readings.absolute ? 0 : bounds.top) + scrollTop + readings.y + 20
       };
     }
-    return {
-      x: bounds.left,
-      y: bounds.top + scrollTop
+    if(textRtl.length > 0) {
+      return {
+        x: bounds.right,
+        y: bounds.top + scrollTop
+      };
+    } else {
+      return {
+        x: bounds.left,
+        y: bounds.top + scrollTop
+      };
     };
   }
 
@@ -68,13 +78,20 @@ function bullseye (el, target, options) {
       tailorOptions.sleeping = false;
       tailor.refresh(); return;
     }
+
     var p = read(readings);
+    var boundsEl = el.getBoundingClientRect();
     if (!tailor && target !== el) {
       p.y += target.offsetHeight;
     }
-    var context = o.context;
-    el.style.left = p.x + 'px';
-    el.style.top = (context ? context.offsetHeight : p.y) + 'px';
+
+    if(textRtl.length > 0) {
+      el.style.left = p.x - boundsEl.width + 'px';
+    } else {
+      el.style.left = p.x + 'px';
+    }
+    el.style.top = p.y + 'px';
+
   }
 
   function destroy () {
